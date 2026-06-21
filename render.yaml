@@ -1,0 +1,63 @@
+# Render.com Blueprint — deploys the full MedSupply AI stack:
+#   - Managed PostgreSQL database
+#   - FastAPI backend (Docker)
+#   - Next.js frontend (Docker)
+#
+# How to use:
+#   1. Push this repo to GitHub.
+#   2. On Render: New + → Blueprint → connect this repo → Apply.
+#   3. After the first deploy, set the frontend's NEXT_PUBLIC_API_BASE to the
+#      backend's public URL (shown in the Render dashboard, e.g.
+#      https://medsupply-backend.onrender.com) and trigger a redeploy.
+#
+# See DEPLOYMENT.md for the full step-by-step.
+
+databases:
+  - name: medsupply-db
+    databaseName: pharma_procurement
+    user: pharma
+    plan: free
+
+services:
+  # ---------- Backend (FastAPI) ----------
+  - type: web
+    name: medsupply-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: medsupply-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        value: admin123
+      - key: OPENAI_API_KEY
+        sync: false          # set your own key in the dashboard (optional)
+      - key: OPENAI_MODEL
+        value: gpt-4.1
+      - key: CORS_ORIGINS
+        value: "*"
+
+  # ---------- Frontend (Next.js) ----------
+  - type: web
+    name: medsupply-frontend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    envVars:
+      # The backend hostname is injected automatically; the value below is the
+      # build arg consumed by the frontend Dockerfile. After first deploy,
+      # confirm it points at the backend's https URL.
+      - key: NEXT_PUBLIC_API_BASE
+        fromService:
+          type: web
+          name: medsupply-backend
+          property: host
