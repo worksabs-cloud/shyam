@@ -35,17 +35,18 @@ export default function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-ink-900 p-12 text-white lg:flex">
-        {/* Animated gradient mesh */}
+        {/* Static gradient mesh (no background-position animation — that
+            repaints the whole screen each frame and causes jank). Ambient
+            motion comes from the GPU-composited floating orb below. */}
         <div
-          className="absolute inset-0 animate-gradient-pan opacity-40"
+          className="absolute inset-0 opacity-40"
           style={{
             backgroundImage:
               "radial-gradient(600px 400px at 80% 10%, #0ea5a4 0%, transparent 60%), radial-gradient(500px 400px at 10% 90%, #0891b2 0%, transparent 55%), radial-gradient(700px 500px at 50% 50%, #22d3ee 0%, transparent 60%)",
-            backgroundSize: "200% 200%",
           }}
         />
-        {/* Floating accent orb */}
-        <div className="pointer-events-none absolute -right-20 top-1/3 h-72 w-72 animate-float rounded-full bg-brand-500/20 blur-3xl" />
+        {/* Floating accent orb (transform-only = GPU accelerated, smooth) */}
+        <div className="pointer-events-none absolute -right-20 top-1/3 h-72 w-72 animate-float rounded-full bg-brand-500/20 blur-3xl will-change-transform" />
 
         <div className="relative flex animate-fade-in-up items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-500 shadow-glow transition-transform hover:scale-110">
