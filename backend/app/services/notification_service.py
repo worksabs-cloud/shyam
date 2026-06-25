@@ -1,0 +1,32 @@
+from sqlalchemy.orm import Session
+from app.models.notification import Notification
+import json
+
+
+def create_notification(db: Session, user_id: int, title: str, message: str,
+                        notification_type: str, data: dict = None):
+    notif = Notification(
+        user_id=user_id,
+        title=title,
+        message=message,
+        notification_type=notification_type,
+        data=json.dumps(data) if data else None
+    )
+    db.add(notif)
+    db.commit()
+    return notif
+
+
+def get_user_notifications(db: Session, user_id: int, unread_only: bool = False):
+    query = db.query(Notification).filter(Notification.user_id == user_id)
+    if unread_only:
+        query = query.filter(Notification.is_read == False)
+    return query.order_by(Notification.created_at.desc()).limit(50).all()
+
+
+def mark_notifications_read(db: Session, user_id: int):
+    db.query(Notification).filter(
+        Notification.user_id == user_id,
+        Notification.is_read == False
+    ).update({"is_read": True})
+    db.commit()

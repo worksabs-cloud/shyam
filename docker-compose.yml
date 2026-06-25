@@ -1,41 +1,57 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: medsupply-db
+    container_name: nahid-pharmacy-db
     environment:
-      POSTGRES_USER: pharma
-      POSTGRES_PASSWORD: pharma
-      POSTGRES_DB: pharma_procurement
+      POSTGRES_USER: nahid
+      POSTGRES_PASSWORD: nahidpass
+      POSTGRES_DB: nahidpharmacy
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pharma -d pharma_procurement"]
+      test: ["CMD-SHELL", "pg_isready -U nahid -d nahidpharmacy"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: nahid-pharmacy-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build: ./backend
-    container_name: medsupply-backend
+    container_name: nahid-pharmacy-backend
     environment:
-      DATABASE_URL: postgresql://pharma:pharma@db:5432/pharma_procurement
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      DATABASE_URL: postgresql://nahid:nahidpass@db:5432/nahidpharmacy
+      JWT_SECRET: ${JWT_SECRET:-nahid-pharmacy-secret-key-change-in-production}
+      SECRET_KEY: ${SECRET_KEY:-nahid-pharmacy-secret-key-change-in-production}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: "*"
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
-    container_name: medsupply-frontend
+    container_name: nahid-pharmacy-frontend
     environment:
       NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
     ports:

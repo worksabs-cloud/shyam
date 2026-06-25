@@ -1,4 +1,4 @@
-"""MedSupply AI — FastAPI application entrypoint."""
+"""Nahid Pharmacy Distribution Platform — FastAPI application entrypoint."""
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,26 +16,42 @@ from .routers import (
     purchase_orders,
     suppliers,
 )
+from .routers import (
+    v2_auth,
+    v2_medicines,
+    v2_orders,
+    v2_analytics,
+    v2_inventory,
+    v2_users,
+    v2_delivery,
+    v2_ai,
+    v2_pharmacies,
+    v2_suppliers,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables on startup (MVP-friendly; use Alembic in production)
     Base.metadata.create_all(bind=engine)
     try:
         from .seed import seed_admin
-
         seed_admin()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"[startup] admin seed skipped: {exc}")
+    try:
+        from .seed_v2 import seed_nahid_platform
+        seed_nahid_platform()
+    except Exception as exc:
+        print(f"[startup] nahid platform seed skipped: {exc}")
     yield
 
 
 app = FastAPI(
-    title=settings.app_name,
-    version="1.0.0",
-    description="AI-powered pharmacy procurement: inventory → analysis → "
-    "recommendations → purchase orders, in under 5 minutes.",
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="Complete B2B & B2C Pharmaceutical Distribution Ecosystem",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
     lifespan=lifespan,
 )
 
@@ -47,6 +63,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Legacy routers
 app.include_router(auth.router)
 app.include_router(inventory.router)
 app.include_router(suppliers.router)
@@ -56,10 +73,27 @@ app.include_router(dashboard.router)
 app.include_router(audit.router)
 app.include_router(demo.router)
 
+# V2 Nahid Pharmacy routers
+app.include_router(v2_auth.router)
+app.include_router(v2_medicines.router)
+app.include_router(v2_orders.router)
+app.include_router(v2_analytics.router)
+app.include_router(v2_inventory.router)
+app.include_router(v2_users.router)
+app.include_router(v2_delivery.router)
+app.include_router(v2_ai.router)
+app.include_router(v2_pharmacies.router)
+app.include_router(v2_suppliers.router)
+
 
 @app.get("/")
 def root():
-    return {"service": settings.app_name, "status": "ok", "docs": "/docs"}
+    return {
+        "service": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "status": "ok",
+        "docs": "/api/docs"
+    }
 
 
 @app.get("/health")
