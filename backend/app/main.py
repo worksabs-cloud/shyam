@@ -7,16 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import Base, engine
 from .routers import (
-    analysis,
-    audit,
-    auth,
-    dashboard,
-    demo,
-    inventory,
-    purchase_orders,
-    suppliers,
-)
-from .routers import (
     v2_auth,
     v2_medicines,
     v2_orders,
@@ -63,17 +53,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Legacy routers
-app.include_router(auth.router)
-app.include_router(inventory.router)
-app.include_router(suppliers.router)
-app.include_router(analysis.router)
-app.include_router(purchase_orders.router)
-app.include_router(dashboard.router)
-app.include_router(audit.router)
-app.include_router(demo.router)
-
-# V2 Nahid Pharmacy routers
+# Nahid Pharmacy routers
 app.include_router(v2_auth.router)
 app.include_router(v2_medicines.router)
 app.include_router(v2_orders.router)
