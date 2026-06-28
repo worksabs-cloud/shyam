@@ -58,6 +58,8 @@ export default function NahidLoginPage() {
     setLoading(true);
     try {
       const res = await nahidApi.login(email, password);
+      // Store token first so the /me request includes Authorization header
+      setSession(res.access_token, res.refresh_token, {});
       const user = await nahidApi.me();
       setSession(res.access_token, res.refresh_token, user);
       redirectByRole(user.role);
