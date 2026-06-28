@@ -1,226 +1,172 @@
-# ⬢ MedSupply AI — AI Pharmacy Procurement Platform
+# Nahid Pharmacy Distribution Platform
 
-> **Reduce pharmacy procurement from hours to under 5 minutes** with AI-powered
-> inventory intelligence: stockout prediction, dead-stock & expiry detection,
-> supplier optimization, and one-click purchase-order automation.
-
-A production-quality, demo-ready MVP that walks judges through the full workflow:
-
-```
-Inventory Upload  →  AI Analysis  →  Smart Recommendations  →  Automated Purchase Order
-```
+A full-stack, production-ready SaaS platform for pharmacy distribution management with multi-role access, B2B/B2C order flows, AI-powered insights, and real-time analytics.
 
 ---
 
-## ✨ Highlights for Judges
+## Roles and Demo Credentials
 
-| Module | What it does |
-| --- | --- |
-| 🧠 **AI Procurement Engine** | Days-of-cover, demand forecasting (7/14/30d), reorder optimization, cheapest-supplier selection, substitute suggestions, and an executive summary. |
-| 📉 **Stockout Prediction** | `Days Left = Current Stock ÷ Avg Daily Sales` → Critical / High / Medium / Low, with plain-English explanations. |
-| 💀 **Dead Stock Detection** *(wow feature)* | Flags zero-movement / severe-overstock SKUs and recommends promotions or transfers. |
-| ⏳ **Expiry Risk Engine** | Critical `<30d` · Warning `30–90d` · Safe `90d+`, with action guidance. |
-| 🚚 **Supplier Comparison** | Ranks suppliers by blended price + lead-time score and quantifies savings. |
-| 📄 **Purchase Order Generator** | One click → branded **PDF** via ReportLab, grouped by optimal supplier. |
-| 📊 **Analytics Dashboard** | Health score, risk & expiry distributions, spend forecast — built with Recharts. |
-| 🧾 **Audit Trail** | Every upload, analysis run, and PO generation is logged and timestamped. |
-
-> 💡 **The AI engine works with or without an OpenAI key.** A deterministic
-> rule engine always produces the full structured analysis, so the demo never
-> breaks. Add an `OPENAI_API_KEY` to enrich the narrative with GPT-4.1.
+| Role | Email | Password | Portal |
+|------|-------|----------|--------|
+| Admin | nahid@admin.com | admin123 | /nahid/admin |
+| Super Admin | superadmin@nahid.com | super123 | /nahid/admin |
+| Supplier | supplier@nahid.com | supplier123 | /nahid/supplier |
+| Pharmacy | pharmacy@nahid.com | pharmacy123 | /nahid/pharmacy |
+| Customer | customer@nahid.com | customer123 | /nahid/customer |
+| Delivery Agent | delivery@nahid.com | delivery123 | /nahid/delivery |
 
 ---
 
-## 🏗️ Architecture
+## Quick Start (Docker Compose)
 
+```bash
+# Clone and start
+git clone <repo-url>
+cd shyam
+
+# Copy env file and configure secrets (optional for local dev)
+cp backend/.env.example .env
+
+# Start all services
+docker compose up --build
+
+# Access the platform
+# Frontend:  http://localhost:3000
+# Backend:   http://localhost:8000
+# API Docs:  http://localhost:8000/docs
+# Landing:   http://localhost:3000/nahid
 ```
-┌────────────────────────┐        ┌──────────────────────────────┐        ┌──────────────┐
-│  Next.js 15 Frontend   │  HTTP  │        FastAPI Backend        │  SQL   │  PostgreSQL  │
-│  TS · Tailwind · React │ <────> │  Pandas · OpenPyXL · ReportLab │ <────> │   16-alpine  │
-│  Query · Recharts      │        │  AI Engine (rules + OpenAI)    │        │              │
-└────────────────────────┘        └──────────────────────────────┘        └──────────────┘
-```
 
-**Frontend** Next.js 15 (App Router), TypeScript, TailwindCSS, ShadCN-style UI,
-React Query, Recharts.
-**Backend** FastAPI, Python 3.12, Pandas, OpenPyXL, SQLAlchemy, ReportLab.
-**AI** OpenAI GPT-4.1 (optional) layered over a deterministic procurement engine.
+The database is seeded automatically on first startup with demo users and 15 sample medicines.
 
-### Folder structure
+---
+
+## Tech Stack
+
+**Backend**
+- FastAPI + SQLAlchemy (async-ready)
+- PostgreSQL 16 with `_v2` table suffix for clean coexistence with legacy schema
+- Redis 7 for caching
+- JWT (access + refresh tokens) via `python-jose`
+- OpenAI GPT-4o-mini for AI features (graceful fallback without API key)
+- Stripe for payments (optional)
+
+**Frontend**
+- Next.js 15 App Router + TypeScript
+- Tailwind CSS with slate/emerald dark theme
+- Recharts for analytics dashboards
+- Role-aware `NahidShell` layout with per-role sidebar navigation
+
+**Infrastructure**
+- Docker Compose (dev) + Docker Compose Prod (with Nginx)
+- Kubernetes manifests in `/k8s/`
+
+---
+
+## Project Structure
 
 ```
 shyam/
-├── docker-compose.yml          # one-command full stack
-├── .env.example
 ├── backend/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   ├── sample_data/            # ready-to-upload CSV/XLSX samples
-│   └── app/
-│       ├── main.py             # FastAPI app + router wiring
-│       ├── config.py           # env-driven settings
-│       ├── database.py         # SQLAlchemy engine/session
-│       ├── models.py           # 8-table PostgreSQL schema
-│       ├── schemas.py          # Pydantic contracts
-│       ├── auth.py             # JWT admin auth
-│       ├── seed.py             # admin + demo data
-│       ├── ai/
-│       │   ├── engine.py       # orchestrates rules + OpenAI
-│       │   └── prompts.py      # prompt-engineering strategy
-│       ├── services/
-│       │   ├── analytics.py    # core procurement intelligence
-│       │   ├── excel.py        # upload parsing + validation
-│       │   ├── pdf.py          # ReportLab PO generator
-│       │   └── audit.py
-│       └── routers/            # auth, inventory, suppliers, analysis,
-│                               # purchase_orders, dashboard, audit, demo
-└── frontend/
-    ├── Dockerfile
-    ├── app/                    # login, dashboard, inventory, suppliers,
-    │                           # analysis, purchase-orders, audit
-    ├── components/             # sidebar, app-shell, kpi-card, charts, ui/*
-    └── lib/                    # api client, utils
+│   ├── app/
+│   │   ├── models/          # SQLAlchemy models (_v2 tables)
+│   │   ├── routers/         # FastAPI routers (v2_* prefix)
+│   │   ├── schemas/         # Pydantic v2 schemas
+│   │   ├── services/        # Business logic layer
+│   │   └── utils/           # Security, helpers
+│   ├── migrations/
+│   │   └── init_schema.sql  # Full PostgreSQL schema
+│   ├── tests/               # pytest test suite
+│   ├── seed_v2.py           # Demo data seeder
+│   ├── .env.example
+│   └── requirements.txt
+├── frontend/
+│   ├── app/
+│   │   └── nahid/           # All platform pages
+│   │       ├── admin/       # Admin portal
+│   │       ├── customer/    # Customer portal
+│   │       ├── pharmacy/    # Pharmacy (B2B) portal
+│   │       ├── supplier/    # Supplier portal
+│   │       ├── delivery/    # Delivery agent portal
+│   │       ├── login/
+│   │       └── register/
+│   ├── components/
+│   │   └── nahid-shell.tsx  # Role-aware layout shell
+│   └── lib/
+│       └── nahid-api.ts     # Typed API client
+├── k8s/                     # Kubernetes manifests
+├── docker-compose.yml       # Development
+└── docker-compose.prod.yml  # Production
 ```
 
 ---
 
-## 🚀 Quick Start (Docker — recommended)
+## API Reference
+
+All new endpoints are under `/api/v2/`. Legacy endpoints remain at `/api/`.
+
+| Group | Prefix | Description |
+|-------|--------|-------------|
+| Auth | `/api/v2/auth/` | Login, register, refresh, me |
+| Medicines | `/api/v2/medicines/` | CRUD, search, approve |
+| Orders | `/api/v2/orders/` | B2B/B2C order management |
+| Inventory | `/api/v2/inventory/` | Batches, stock levels, alerts |
+| Analytics | `/api/v2/analytics/` | Dashboard stats, trends |
+| AI | `/api/v2/ai/` | Smart search, forecast, expiry risk |
+| Users | `/api/v2/users/` | User management |
+| Pharmacies | `/api/v2/pharmacies/` | Pharmacy profiles |
+| Suppliers | `/api/v2/suppliers/` | Supplier profiles |
+| Delivery | `/api/v2/delivery/` | Agent assignments |
+
+Interactive API docs: `http://localhost:8000/docs`
+
+---
+
+## Environment Variables
+
+See `backend/.env.example` for the full list. Required for production:
+
+- `DATABASE_URL` — PostgreSQL connection string
+- `JWT_SECRET` / `SECRET_KEY` — 256-bit random strings
+- `ADMIN_PASSWORD` — Initial admin password
+
+Optional:
+- `OPENAI_API_KEY` — Enables AI smart search, demand forecasting, expiry risk
+- `STRIPE_SECRET_KEY` — Enables online payments
+
+---
+
+## Kubernetes Deployment
 
 ```bash
-cp .env.example .env          # optional: add OPENAI_API_KEY for GPT-4.1
-docker compose up --build
+# Apply namespace first
+kubectl apply -f k8s/namespace.yaml
+
+# Create secrets
+kubectl create secret generic nahid-secrets \
+  --namespace=nahid-pharmacy \
+  --from-literal=db-user=nahid \
+  --from-literal=db-password=<strong-password> \
+  --from-literal=database-url=postgresql://nahid:<password>@postgres:5432/nahidpharmacy \
+  --from-literal=jwt-secret=<random-256bit> \
+  --from-literal=secret-key=<random-256bit>
+
+# Deploy all services
+kubectl apply -f k8s/
 ```
-
-| Service | URL |
-| --- | --- |
-| Frontend | http://localhost:3000 |
-| Backend API + Swagger docs | http://localhost:8000/docs |
-| PostgreSQL | localhost:5432 |
-
-**Login:** `admin` / `admin123`
 
 ---
 
-## 🧪 Local Development (without Docker)
+## Running Tests
 
-### Backend
 ```bash
 cd backend
-python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Point at a local Postgres (or use docker compose up db)
-export DATABASE_URL=postgresql://pharma:pharma@localhost:5432/pharma_procurement
-export OPENAI_API_KEY=                # optional
-
-uvicorn app.main:app --reload --port 8000
-# Seed demo data + admin:
-python -m app.seed
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-echo "NEXT_PUBLIC_API_BASE=http://localhost:8000" > .env.local
-npm run dev      # http://localhost:3000
+pytest tests/ -v
 ```
 
 ---
 
-## 🎬 5-Minute Demo Script
+## Original MedSupply AI Platform
 
-1. **Login** with `admin / admin123`.
-2. On the **Dashboard**, click **Load Demo Data** (20 medicines + 26 catalog rows
-   engineered to showcase every risk category). *Or* upload the files in
-   `backend/sample_data/` on the **Inventory** and **Supplier Catalog** pages.
-3. Watch the **KPI cards** and **charts** populate — health score, stockout,
-   dead stock, expiry, reorder cost.
-4. Go to **AI Analysis** → click **Analyze Inventory**.
-   - Read the **AI Executive Summary** + priority actions + risk callouts.
-   - Review **Stockout Prediction**, **Dead Stock**, **Expiry Risk**,
-     **Supplier Optimization**, and **Substitutes**.
-5. In **AI Recommended Orders**, click a supplier button to **generate a PO** in
-   one click.
-6. Open **Purchase Orders** → **Download PDF** (branded, ReportLab).
-7. Open **Audit Trail** to show every action was logged.
-
----
-
-## 🔌 API Reference
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `POST` | `/auth/login` | Admin login → JWT |
-| `POST` | `/demo/load` | One-click demo data |
-| `POST` | `/inventory/upload` | Upload inventory Excel/CSV |
-| `GET`  | `/inventory` | List inventory |
-| `POST` | `/suppliers/upload` | Upload supplier catalog |
-| `GET`  | `/suppliers` | List catalog |
-| `POST` | `/analysis/run` | Run AI procurement analysis |
-| `GET`  | `/analysis/results` | Latest analysis result |
-| `POST` | `/purchase-orders/generate` | Generate a PO |
-| `GET`  | `/purchase-orders` | List POs |
-| `GET`  | `/purchase-orders/{id}/pdf` | Download PO PDF |
-| `GET`  | `/dashboard/metrics` | Dashboard KPIs + charts |
-| `GET`  | `/audit-log` | Audit trail |
-
-Full interactive docs at **`/docs`** (Swagger) and **`/redoc`**.
-
----
-
-## 🗄️ Database Schema
-
-8 tables with indexes & relationships (auto-created on startup):
-
-`users` · `inventory` · `suppliers` · `supplier_catalog` ·
-`purchase_orders` · `purchase_order_items` · `analysis_runs` · `audit_logs`
-
-See `backend/app/models.py`. For production, generate Alembic migrations from
-these models.
-
----
-
-## 🧠 AI Analysis Logic
-
-1. **Days Left** = `Current Stock ÷ Avg Daily Sales`
-2. **Risk**: Critical `0–3d` · High `4–7d` · Medium `8–14d` · Low `15d+`
-3. **Forecast**: 7-day / 14-day / 30-day demand
-4. **Reorder Qty**: order-up-to (lead time + 21-day window + 7-day safety) − stock
-5. **Cheapest Supplier**: blended 70% price + 30% lead-time score
-6. **Substitutes**: in-stock, same-category, healthy-cover alternatives
-7. **Rationale**: deterministic + optional GPT-4.1 executive narrative
-
-### Structured AI output
-```json
-{
-  "stockout_risk": [],
-  "recommended_orders": [],
-  "supplier_recommendations": [],
-  "alternatives": [],
-  "dead_stock": [],
-  "expiry_risk": [],
-  "executive_summary": "",
-  "metrics": { "health_score": 0, "risk_distribution": {}, "...": {} }
-}
-```
-
----
-
-## 🔐 Configuration
-
-All via environment variables (see `.env.example`):
-`DATABASE_URL`, `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`,
-`OPENAI_API_KEY`, `OPENAI_MODEL`, `NEXT_PUBLIC_API_BASE`.
-
----
-
-## 📦 Tech Stack
-
-`Next.js 15` · `TypeScript` · `TailwindCSS` · `React Query` · `Recharts` ·
-`FastAPI` · `Python 3.12` · `Pandas` · `OpenPyXL` · `SQLAlchemy` · `ReportLab` ·
-`PostgreSQL` · `OpenAI GPT-4.1` · `Docker` / `Docker Compose`
-
----
-
-Built for the hackathon — enterprise-grade UX, real working workflows, strong AI value.
+The original MedSupply AI platform (legacy routes at `/api/`) continues to work alongside the new platform. No existing functionality was removed.
