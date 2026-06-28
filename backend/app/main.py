@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .database import Base, engine
+from .database import Base, SessionLocal, engine
 from .routers import (
     analysis,
     audit,
@@ -65,3 +65,22 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.get("/api/setup")
+def setup():
+    """One-shot setup: create tables, seed admin user, and load demo data."""
+    from .seed import load_demo_data, seed_admin
+
+    Base.metadata.create_all(bind=engine)
+    seed_admin()
+    db = SessionLocal()
+    try:
+        counts = load_demo_data(db)
+    finally:
+        db.close()
+    return {
+        "status": "ok",
+        "message": "Database initialised and demo data loaded.",
+        **counts,
+    }
