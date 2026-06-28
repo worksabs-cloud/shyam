@@ -79,3 +79,25 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.get("/api/setup")
+def setup_seed():
+    """One-time setup endpoint to seed initial data."""
+    try:
+        from .seed_v2 import seed_nahid_platform
+        seed_nahid_platform()
+        return {
+            "status": "success",
+            "message": "Platform seeded successfully!",
+            "credentials": {
+                "admin": {"email": "nahid@admin.com", "password": "admin123"},
+                "superadmin": {"email": "superadmin@nahid.com", "password": "super123"},
+                "supplier": {"email": "supplier@nahid.com", "password": "supplier123"},
+                "customer": {"email": "customer@nahid.com", "password": "customer123"},
+                "pharmacy": {"email": "pharmacy@nahid.com", "password": "pharmacy123"},
+                "delivery": {"email": "delivery@nahid.com", "password": "delivery123"},
+            }
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
